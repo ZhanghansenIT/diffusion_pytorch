@@ -3,7 +3,11 @@
 from functools import partial
 import torch
 from argparse import ArgumentParser 
+from Model.diffusion import GaussianDiffusion , generate_cosine_schedule ,generate_linear_schedule
+from Model.Unet import UNet
 
+
+import numpy as np
 import gin 
 @gin.configurable("options")
 def get_options(dataset="default", batch_size=1,
@@ -32,10 +36,8 @@ def get_options(dataset="default", batch_size=1,
 def parse_arguments():
     parser = ArgumentParser(description='Training script:')
     parser.add_argument('--gin_config', default='', type=str, help='Path to the gin configuration file')
+    parser.add_argument('--pre_weights' ,default='',type=str ,help='pre-training weight of path ')
     return parser.parse_args()
-
-
-
 
 
 
@@ -53,16 +55,40 @@ def train() :
         # 创建 Unet结构 
         pass 
     isload = options.get("isload")
-  
+    
+    diffusion_arg = {}
+    
+    channel = options.get("channels")
+    num_timesteps = options.get("num_timesteps")
+    input_shape = tuple(options.get("img_h") , options.get("img_w"))
+    betas = options.get("betas")
+    schedule = options.get("schedule")
+    schedule_low = options.get("schedule_low")
+    schedule_high = options.get("schedule_high")
+    if schedule == "cosine" : 
+        betas = generate_cosine_schedule(num_timesteps)
+    else:
+        betas = generate_linear_schedule(
+            num_timesteps,
+            schedule_low * 1000 / num_timesteps,
+            schedule_high * 1000 / num_timesteps,
+        ) 
+    pre_weights_path  = args.pre_weights 
+    
+    diffusion_model = GaussianDiffusion(UNet(3, channel), input_shape, 3, betas=betas)
     if isinstance(isload,bool) : 
         if isload :
-            # 加载  
-            pass 
-        else : 
-            pass 
+            # 加载预训练权重     
+            model_dict = diffusion_model.state_dict( )
+            pre_train_dict = torch.load(pre_weights_path,map_location=device)
+            pre_train_dict = { k : v for k , v in pre_train_dict.items() if np.shape(model_dict[k]) ==  np.shape(v)}
+            model_dict.update(pre_train_dict)
+            diffusion_model.load_state_dict(model_dict)
     else: 
         # 不是 bool 
-        pass 
+        raise("不能加载")
+    
+    
 
 if __name__ == "__main__" : 
     
