@@ -1,0 +1,14 @@
+options.dataset = "lsui"
+options.batch_size = 64
+options.lr = 2e-4
+options.betas = (0.5,0.999)
+options.network = "U-net"
+options.isload = False 
+options.channels = 128
+options.schedule = "linear" 
+options.num_timesteps = 1000
+options.schedule_low = 1e-4
+options.schedule_high = 0.02 
+options.img_h = 32 
+options.img_w = 32
+
