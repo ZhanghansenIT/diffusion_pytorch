@@ -11,4 +11,4 @@ options.schedule_low = 1e-4
 options.schedule_high = 0.02 
 options.img_h = 32 
 options.img_w = 32
-
+options.optimizer = "adam"
